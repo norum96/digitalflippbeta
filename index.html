@@ -89,6 +89,18 @@
   <!-- Eventuelle ekstra oppgaver kan listes her (ikke i bruk aktivt nå) -->
   <div id="ekstra-oppgaver" style="display: none;"></div>
 
+  <!-- Tannhjulsknapp for innstillinger -->
+<button class="settings-button no-print" onclick="visInnstillingerModal()">⚙️</button>
+
+<!-- Modal for innstillinger -->
+<div id="innstillinger-modal" class="modal">
+  <div class="modal-content">
+    <h3>Innstillinger</h3>
+    <p>Her kan du endre bruker-IDer og vaktkoder (kommer snart).</p>
+    <button onclick="lukkInnstillingerModal()">Lukk</button>
+  </div>
+</div>
+
   <!-- Script -->
   <script src="script.js"></script>
 </body>
