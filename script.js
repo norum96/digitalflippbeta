@@ -1,9 +1,15 @@
 // script.js
 
-const brukere = ["1111", "1112", "1113", "1114", "1115", "1116", "1117", "1118", "1119", "1120", "1121"];
-const tider = ["08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30"];
-const vaktkoder = ["D1", "D2", "D3", "D4", "Deleger"];
-const ekstraOppgaver = [];
+let brukere = ["1111", "1112", "1113", "1114", "1115", "1116", "1117", "1118", "1119", "1120", "1121"];
+let tider = ["08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30"];
+let vaktkoder = ["D1", "D2", "D3", "D4", "Deleger"];
+let vaktkodeFarger = {
+  D1: "lightgreen",
+  D2: "lightblue",
+  D3: "lightcoral",
+  D4: "lightyellow",
+  Deleger: "lightgray"
+};
 
 const rutenett = document.getElementById("rutenett");
 
@@ -205,12 +211,105 @@ function slettEkstraOppgave(oppgave) {
   }
 }
 
-  //Innstillinger
-  
-  function visInnstillingerModal() {
-  document.getElementById("innstillinger-modal").style.display = "flex";
+ // Innstillinger - vis modal og oppdater innhold
+function visInnstillingerModal() {
+  const modal = document.getElementById("innstillinger-modal");
+  const brukerListe = document.getElementById("bruker-liste");
+  const vaktkodeListe = document.getElementById("vaktkode-liste");
+
+  brukerListe.innerHTML = "";
+  brukere.forEach((id, index) => {
+    const li = document.createElement("li");
+    li.textContent = id + " ";
+    const btn = document.createElement("button");
+    btn.textContent = "❌";
+    btn.onclick = () => {
+      brukere.splice(index, 1);
+      visInnstillingerModal();
+      genererRutenett();
+    };
+    li.appendChild(btn);
+    brukerListe.appendChild(li);
+  });
+
+  vaktkodeListe.innerHTML = "";
+  vaktkoder.forEach((kode, index) => {
+    const li = document.createElement("li");
+    const input = document.createElement("input");
+    input.type = "color";
+    input.value = vaktkodeFarger[kode] || "#ffffff";
+    input.oninput = () => {
+      vaktkodeFarger[kode] = input.value;
+      genererVaktkodeStiler();
+    };
+
+    const span = document.createElement("span");
+    span.textContent = kode + " ";
+
+    const btn = document.createElement("button");
+    btn.textContent = "❌";
+    btn.onclick = () => {
+      vaktkoder.splice(index, 1);
+      delete vaktkodeFarger[kode];
+      visInnstillingerModal();
+      genererRutenett();
+      genererVaktkodeStiler();
+    };
+
+    li.appendChild(span);
+    li.appendChild(input);
+    li.appendChild(btn);
+    vaktkodeListe.appendChild(li);
+  });
+
+  modal.style.display = "flex";
 }
 
 function lukkInnstillingerModal() {
   document.getElementById("innstillinger-modal").style.display = "none";
 }
+
+function leggTilBruker() {
+  const input = document.getElementById("ny-bruker");
+  const verdi = input.value.trim();
+  if (verdi && !brukere.includes(verdi)) {
+    brukere.push(verdi);
+    input.value = "";
+    visInnstillingerModal();
+    genererRutenett();
+  }
+}
+
+function leggTilVaktkode() {
+  const kodeInput = document.getElementById("ny-vaktkode");
+  const fargeInput = document.getElementById("ny-vaktkode-farge");
+  const kode = kodeInput.value.trim();
+  if (kode && !vaktkoder.includes(kode)) {
+    vaktkoder.push(kode);
+    vaktkodeFarger[kode] = fargeInput.value;
+    kodeInput.value = "";
+    fargeInput.value = "#cccccc";
+    visInnstillingerModal();
+    genererRutenett();
+    genererVaktkodeStiler();
+  }
+}
+
+function genererVaktkodeStiler() {
+  const styleTag = document.getElementById("vaktkode-styles") || (() => {
+    const style = document.createElement("style");
+    style.id = "vaktkode-styles";
+    document.head.appendChild(style);
+    return style;
+  })();
+
+  const css = vaktkoder.map(kode => `
+    .rute.${kode} { background-color: ${vaktkodeFarger[kode]}; }
+    .${kode} > h3 { background-color: ${vaktkodeFarger[kode]}; padding: 0.2em; }
+  `).join("\n");
+
+  styleTag.textContent = css;
+}
+
+// Kjør én gang ved start
+genererVaktkodeStiler();
