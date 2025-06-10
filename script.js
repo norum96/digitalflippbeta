@@ -203,4 +203,14 @@ function slettEkstraOppgave(oppgave) {
     ekstraOppgaver.splice(index, 1);
     genererVaktkodeOversikt();
   }
+
+  //Innstillinger
+  
+  function visInnstillingerModal() {
+  document.getElementById("innstillinger-modal").style.display = "flex";
+}
+
+function lukkInnstillingerModal() {
+  document.getElementById("innstillinger-modal").style.display = "none";
+}
 }
