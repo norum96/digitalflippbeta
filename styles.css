@@ -206,3 +206,22 @@ td {
   color: black;
   font-weight: bold;
 }
+
+
+/* Tannhjulsknapp */
+.settings-button {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  font-size: 1.5rem;
+  background-color: white;
+  border: 2px solid #ccc;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  z-index: 1000;
+}
+
+/* Modal for innstillinger bruker samme modal-style som før */
+
