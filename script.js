@@ -10,51 +10,59 @@ let vaktkodeFarger = {
   D4: "lightyellow",
   Deleger: "lightgray"
 };
+const ekstraOppgaver = [];
 
 const rutenett = document.getElementById("rutenett");
 
 // --------- LAG RUTENETT ----------
-const headRad = document.createElement("tr");
-const tomtHode = document.createElement("th");
-headRad.appendChild(tomtHode);
-brukere.forEach(bruker => {
-  const celle = document.createElement("th");
-  celle.textContent = bruker;
-  headRad.appendChild(celle);
-});
-rutenett.appendChild(headRad);
-
-tider.forEach(tid => {
-  const rad = document.createElement("tr");
-  const tidCelle = document.createElement("td");
-  tidCelle.textContent = tid;
-  rad.appendChild(tidCelle);
-  brukere.forEach(() => {
-    const celle = document.createElement("td");
-    celle.classList.add("rute");
-    rad.appendChild(celle);
+function genererRutenett() {
+  rutenett.innerHTML = "";
+  const headRad = document.createElement("tr");
+  const tomtHode = document.createElement("th");
+  headRad.appendChild(tomtHode);
+  brukere.forEach(bruker => {
+    const celle = document.createElement("th");
+    celle.textContent = bruker;
+    headRad.appendChild(celle);
   });
-  rutenett.appendChild(rad);
-});
+  rutenett.appendChild(headRad);
+
+  tider.forEach(tid => {
+    const rad = document.createElement("tr");
+    const tidCelle = document.createElement("td");
+    tidCelle.textContent = tid;
+    rad.appendChild(tidCelle);
+    brukere.forEach(() => {
+      const celle = document.createElement("td");
+      celle.classList.add("rute");
+      rad.appendChild(celle);
+    });
+    rutenett.appendChild(rad);
+  });
+  genererVaktkodeOversikt();
+  genererVaktkodeStiler();
+}
+
+genererRutenett();
 
 // --------- MODAL FOR TIDSPLAN ---------
 let valgtCelle = null;
 
-document.querySelectorAll(".rute").forEach(celle => {
-  celle.addEventListener("click", () => {
-    valgtCelle = celle;
-    const rad = celle.parentElement;
+document.addEventListener("click", (e) => {
+  if (e.target.classList.contains("rute")) {
+    valgtCelle = e.target;
+    const rad = valgtCelle.parentElement;
     const tid = rad.firstElementChild.textContent;
-    const kolIndex = [...rad.children].indexOf(celle);
+    const kolIndex = [...rad.children].indexOf(valgtCelle);
     const bruker = brukere[kolIndex - 1];
 
     document.getElementById("modal-info").textContent = `Redigerer: ${bruker} - ${tid}`;
 
-    celle.classList.add("aktiv");
-    document.getElementById("modal-bistand").value = celle.querySelector(".bistand")?.textContent || "";
-    document.getElementById("modal-vaktkode").value = celle.querySelector(".vaktkode")?.textContent || "D1";
+    valgtCelle.classList.add("aktiv");
+    document.getElementById("modal-bistand").value = valgtCelle.querySelector(".bistand")?.textContent || "";
+    document.getElementById("modal-vaktkode").value = valgtCelle.querySelector(".vaktkode")?.textContent || "D1";
     document.getElementById("modal").style.display = "flex";
-  });
+  }
 });
 
 document.getElementById("modal-cancel").addEventListener("click", () => {
@@ -85,216 +93,6 @@ document.getElementById("modal-save").addEventListener("click", () => {
   genererVaktkodeOversikt();
 });
 
-// --------- GENERER VAKTKODEOVERSIKT ---------
-function genererVaktkodeOversikt() {
-  const oversikt = {};
-  const rader = rutenett.querySelectorAll("tr");
-
-  rader.forEach((rad, radIndex) => {
-    if (radIndex === 0) return;
-    const tid = rad.children[0].textContent;
-    for (let i = 1; i < rad.children.length; i++) {
-      const celle = rad.children[i];
-      const bistand = celle.querySelector(".bistand")?.textContent;
-      const vaktkode = celle.querySelector(".vaktkode")?.textContent;
-      const bruker = brukere[i - 1];
-
-      if (bistand && vaktkode) {
-        if (!oversikt[vaktkode]) oversikt[vaktkode] = [];
-        oversikt[vaktkode].push({ tid, bruker, bistand });
-      }
-    }
-  });
-
-  ekstraOppgaver.forEach(oppgave => {
-    const { id, bistand, type, klokkeslett, vaktkode } = oppgave;
-    if (!oversikt[vaktkode]) oversikt[vaktkode] = [];
-    const isOppf = type === "Oppfølging";
-    const visBistand = isOppf ? `Oppfølging - ${id} - ${bistand || "Ved behov"}` : bistand;
-    oversikt[vaktkode].push({
-      tid: isOppf ? "99:99" : klokkeslett,
-      bruker: isOppf ? "" : id,
-      bistand: visBistand,
-      original: oppgave,
-      format: isOppf ? "bold" : "italic"
-    });
-  });
-
-  const oversiktDiv = document.getElementById("vaktkode-oversikt");
-  oversiktDiv.innerHTML = "";
-
-  Object.entries(oversikt).forEach(([kode, oppgaver]) => {
-    const seksjon = document.createElement("div");
-    seksjon.innerHTML = `<h3 class="${kode}">${kode}</h3>`;
-    oppgaver
-      .sort((a, b) => a.tid.localeCompare(b.tid))
-      .forEach(item => {
-        const linje = document.createElement("p");
-        linje.innerHTML = `${item.tid && item.tid !== "99:99" ? item.tid + " - " : ""}${item.bruker ? item.bruker + " - " : ""}${item.format === "bold" ? `<strong>${item.bistand}</strong>` : item.format === "italic" ? `<em>${item.bistand}</em>` : item.bistand}`;
-        if (item.original) {
-          const redigerBtn = document.createElement("button");
-          redigerBtn.textContent = "✏️";
-          redigerBtn.onclick = () => redigerEkstraOppgave(item.original);
-          redigerBtn.classList.add("no-print");
-
-          const slettBtn = document.createElement("button");
-          slettBtn.textContent = "❌";
-          slettBtn.onclick = () => slettEkstraOppgave(item.original);
-          slettBtn.classList.add("no-print");
-
-          linje.appendChild(redigerBtn);
-          linje.appendChild(slettBtn);
-        }
-        seksjon.appendChild(linje);
-      });
-    oversiktDiv.appendChild(seksjon);
-  });
-}
-
-// --------- EKSTRA MODAL-FUNKSJONER ---------
-function visEkstraModal() {
-  document.getElementById("ekstra-modal").style.display = "flex";
-}
-
-function lukkEkstraModal() {
-  document.getElementById("ekstra-modal").style.display = "none";
-  document.getElementById("ekstra-id").value = "";
-  document.getElementById("ekstra-bistand").value = "";
-  document.getElementById("ekstra-type").value = "Påminnelse";
-  document.getElementById("ekstra-klokkeslett").value = "";
-  document.getElementById("ekstra-vaktkode").value = "D1";
-  oppdaterFelter();
-}
-
-function oppdaterFelter() {
-  const type = document.getElementById("ekstra-type").value;
-  const klokkeslettLabel = document.getElementById("ekstra-klokkeslett-label");
-  const klokkeslettInput = document.getElementById("ekstra-klokkeslett");
-  if (type === "Påminnelse") {
-    klokkeslettLabel.style.display = "block";
-    klokkeslettInput.style.display = "block";
-  } else {
-    klokkeslettLabel.style.display = "none";
-    klokkeslettInput.style.display = "none";
-  }
-}
-
-function lagreEkstra() {
-  const id = document.getElementById("ekstra-id").value.trim();
-  const bistand = document.getElementById("ekstra-bistand").value.trim();
-  const type = document.getElementById("ekstra-type").value;
-  const klokkeslett = document.getElementById("ekstra-klokkeslett").value;
-  const vaktkode = document.getElementById("ekstra-vaktkode").value;
-  if (!id || !vaktkode) return;
-  if (type === "Påminnelse" && !klokkeslett) return;
-  ekstraOppgaver.push({ id, bistand, type, klokkeslett, vaktkode });
-  lukkEkstraModal();
-  genererVaktkodeOversikt();
-}
-
-function redigerEkstraOppgave(oppgave) {
-  document.getElementById("ekstra-id").value = oppgave.id;
-  document.getElementById("ekstra-bistand").value = oppgave.bistand;
-  document.getElementById("ekstra-type").value = oppgave.type;
-  document.getElementById("ekstra-klokkeslett").value = oppgave.klokkeslett || "";
-  document.getElementById("ekstra-vaktkode").value = oppgave.vaktkode;
-  oppdaterFelter();
-  visEkstraModal();
-  ekstraOppgaver.splice(ekstraOppgaver.indexOf(oppgave), 1);
-}
-
-function slettEkstraOppgave(oppgave) {
-  const index = ekstraOppgaver.indexOf(oppgave);
-  if (index > -1) {
-    ekstraOppgaver.splice(index, 1);
-    genererVaktkodeOversikt();
-  }
-}
-
- // Innstillinger - vis modal og oppdater innhold
-function visInnstillingerModal() {
-  const modal = document.getElementById("innstillinger-modal");
-  const brukerListe = document.getElementById("bruker-liste");
-  const vaktkodeListe = document.getElementById("vaktkode-liste");
-
-  brukerListe.innerHTML = "";
-  brukere.forEach((id, index) => {
-    const li = document.createElement("li");
-    li.textContent = id + " ";
-    const btn = document.createElement("button");
-    btn.textContent = "❌";
-    btn.onclick = () => {
-      brukere.splice(index, 1);
-      visInnstillingerModal();
-      genererRutenett();
-    };
-    li.appendChild(btn);
-    brukerListe.appendChild(li);
-  });
-
-  vaktkodeListe.innerHTML = "";
-  vaktkoder.forEach((kode, index) => {
-    const li = document.createElement("li");
-    const input = document.createElement("input");
-    input.type = "color";
-    input.value = vaktkodeFarger[kode] || "#ffffff";
-    input.oninput = () => {
-      vaktkodeFarger[kode] = input.value;
-      genererVaktkodeStiler();
-    };
-
-    const span = document.createElement("span");
-    span.textContent = kode + " ";
-
-    const btn = document.createElement("button");
-    btn.textContent = "❌";
-    btn.onclick = () => {
-      vaktkoder.splice(index, 1);
-      delete vaktkodeFarger[kode];
-      visInnstillingerModal();
-      genererRutenett();
-      genererVaktkodeStiler();
-    };
-
-    li.appendChild(span);
-    li.appendChild(input);
-    li.appendChild(btn);
-    vaktkodeListe.appendChild(li);
-  });
-
-  modal.style.display = "flex";
-}
-
-function lukkInnstillingerModal() {
-  document.getElementById("innstillinger-modal").style.display = "none";
-}
-
-function leggTilBruker() {
-  const input = document.getElementById("ny-bruker");
-  const verdi = input.value.trim();
-  if (verdi && !brukere.includes(verdi)) {
-    brukere.push(verdi);
-    input.value = "";
-    visInnstillingerModal();
-    genererRutenett();
-  }
-}
-
-function leggTilVaktkode() {
-  const kodeInput = document.getElementById("ny-vaktkode");
-  const fargeInput = document.getElementById("ny-vaktkode-farge");
-  const kode = kodeInput.value.trim();
-  if (kode && !vaktkoder.includes(kode)) {
-    vaktkoder.push(kode);
-    vaktkodeFarger[kode] = fargeInput.value;
-    kodeInput.value = "";
-    fargeInput.value = "#cccccc";
-    visInnstillingerModal();
-    genererRutenett();
-    genererVaktkodeStiler();
-  }
-}
-
 function genererVaktkodeStiler() {
   const styleTag = document.getElementById("vaktkode-styles") || (() => {
     const style = document.createElement("style");
@@ -311,5 +109,11 @@ function genererVaktkodeStiler() {
   styleTag.textContent = css;
 }
 
-// Kjør én gang ved start
-genererVaktkodeStiler();
+// Åpne innstillingsmodal
+function visInnstillingerModal() {
+  document.getElementById("innstillinger-modal").style.display = "flex";
+}
+
+function lukkInnstillingerModal() {
+  document.getElementById("innstillinger-modal").style.display = "none";
+}
